@@ -1,17 +1,15 @@
 # Tool to generate a deck of anki cards from a subtitle file
 from xpinyin import Pinyin
+import genanki
 import argparse
 import json
-import re
+import uuid
 
 class DeckGenerator:
     def __init__(self, dict_file, max_word_length):
         self.dict_file = dict_file
         self.max_word_length = max_word_length
         self.pinyin = Pinyin()
-
-#        self.same_re = re.compile(r'.*same as (.*)\[[a-zA-Z1-4]+\]')
-#        self.variant_re = re.compile(r'.*variant of (.*)\[[a-zA-Z1-4]+\]')
 
         with open(self.dict_file) as f:
             dict_raw = json.load(f)
@@ -28,14 +26,6 @@ class DeckGenerator:
                 return dictionary[word]
         return None
 
-#    def resolve_english_definition(self, definition):
-#        for re in [self.same_re, self.variant_re]:
-#            match = re.match(definition)
-#            if match:
-#                pass
-#                # other_definitions = self.find_words(match[1])
-#                # return self.resolve_english_definition(m.group(1))
-
     def resolve_pinyin(self, word):
         return self.pinyin.get_pinyin(word, '', tone_marks='marks')
 
@@ -47,8 +37,7 @@ class DeckGenerator:
                 word = line[left:right]
                 entry = self.lookup_word_in_dictionary(word)
                 if entry:
-                    # english = self.resolve_english_definition(entry['english'])
-                    pinyin = self.resolve_pinyin(entry['pinyin'])
+                    pinyin = self.resolve_pinyin(word)
                     yield (word, pinyin, entry['english'])
 
                     found = True
@@ -58,11 +47,38 @@ class DeckGenerator:
                 left += 1
 
     def run(self, subtitle_file):
+        my_model = genanki.Model(
+            uuid.uuid4().int >> 64 + 1,
+            'Simple Model',
+            fields=[
+                {'name': 'Question'},
+                {'name': 'Answer'},
+            ],
+            templates=[
+                {
+                'name': 'Card 1',
+                'qfmt': '{{Question}}',
+                'afmt': '{{FrontSide}}<hr id="answer">{{Answer}}',
+                },
+            ])
+        my_deck = genanki.Deck(
+            uuid.uuid4().int >> 64 + 1,
+            'Chinese test cards')
+
         with open(subtitle_file, 'r', encoding='utf-8') as f:
+            words = set()
             for line in [l.rstrip('\n') for l in f.readlines()]:
                 if self.is_chinese(line):
-                    print(line)
-                    print([word for word in self.find_words(line)])
+                    for word in self.find_words(line):
+                        words.add(word)
+            for hanzi, pinyin, english in words:
+                my_note = genanki.Note(
+                    model=my_model,
+                    fields=[pinyin, english])
+                my_deck.add_note(my_note)
+                print((hanzi, pinyin, english))
+
+        genanki.Package(my_deck).write_to_file('chinese_test_cards.apkg')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate anki deck from subtitle file')
