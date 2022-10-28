@@ -1,2 +1,3 @@
 .vscode
 *.apkg
+*.pyc

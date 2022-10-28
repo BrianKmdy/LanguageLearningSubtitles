@@ -4,8 +4,9 @@ import genanki
 import argparse
 import json
 import uuid
+import click
 
-class DeckGenerator:
+class AnkiDeckGenerator:
     def __init__(self, dict_file, max_word_length):
         self.dict_file = dict_file
         self.max_word_length = max_word_length
@@ -39,7 +40,6 @@ class DeckGenerator:
                 if entry:
                     pinyin = self.resolve_pinyin(word)
                     yield (word, pinyin, entry['english'])
-
                     found = True
                     left = right
                     break
@@ -87,5 +87,5 @@ if __name__ == '__main__':
     parser.add_argument('--max-word-length', type=int, default=3)
     args = parser.parse_args()
 
-    generator = DeckGenerator(args.dict, args.max_word_length)
+    generator = AnkiDeckGenerator(args.dict, args.max_word_length)
     generator.run(args.sub)
