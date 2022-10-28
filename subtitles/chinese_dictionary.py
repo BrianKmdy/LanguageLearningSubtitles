@@ -2,6 +2,7 @@
 from xpinyin import Pinyin
 import json
 
+
 class ChineseDictionary:
     def __init__(self, dict_file, max_word_length):
         self.dict_file = dict_file

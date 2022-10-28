@@ -3,6 +3,7 @@ import argparse
 import subprocess
 import os
 
+
 class SubtitleGenerator:
     def __init__(self, model, language, tasks, pinyin, chinese_dictionary=None):
         self.model = model
@@ -20,7 +21,8 @@ class SubtitleGenerator:
         with open(path_in, 'r', encoding='utf-8') as fin:
             with open(path_out, 'w', encoding='utf-8') as fout:
                 for line in fin.readlines():
-                    fout.write(getattr(self.chinese_dictionary, translate_func)(line.rstrip()) + '\n')
+                    fout.write(getattr(self.chinese_dictionary,
+                               translate_func)(line.rstrip()) + '\n')
 
     def _generate_with_whisper(self, task):
         if task not in ('transcribe', 'translate'):
@@ -44,7 +46,8 @@ class SubtitleGenerator:
         os.remove(f'{self.path}.vtt')
 
     def generate_subtitles(self, path):
-        self.path = path if os.path.isabs(path) else os.path.join(os.getcwd(), path)
+        self.path = path if os.path.isabs(
+            path) else os.path.join(os.getcwd(), path)
         self.dir = os.path.dirname(self.path)
         self.name = os.path.splitext(os.path.basename(self.path))[0]
 
@@ -58,10 +61,13 @@ class SubtitleGenerator:
 
         if self.pinyin:
             print('Translating to pinyin')
-            self._translate_subtitles(self.generated_subtitle_path, self.pinyin_subtitle_path, 'translate_to_pinyin')
+            self._translate_subtitles(
+                self.generated_subtitle_path, self.pinyin_subtitle_path, 'translate_to_pinyin')
+
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Translate a hanzi file to pinyin')
+    parser = argparse.ArgumentParser(
+        description='Translate a hanzi file to pinyin')
     parser.add_argument('path', type=str, nargs='+')
     parser.add_argument('--model', type=str, default='small')
     parser.add_argument('--language', type=str, default='Chinese')
@@ -72,9 +78,11 @@ if __name__ == '__main__':
     dictionary = None
     if args.pinyin:
         if args.language != 'Chinese':
-            raise Exception('Chinese must be the language if --pinyin is selected')
+            raise Exception(
+                'Chinese must be the language if --pinyin is selected')
         print('Loading chinese dictionary')
-        dictionary = chinese_dictionary.ChineseDictionary(os.environ['DICT_PATH'], 3)
+        dictionary = chinese_dictionary.ChineseDictionary(
+            os.environ['DICT_PATH'], 3)
 
     generator = SubtitleGenerator(
         args.model,

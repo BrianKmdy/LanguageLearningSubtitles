@@ -9,6 +9,7 @@ import os
 # TODO Fix the format of cards
 # TODO Handle recursive definitions
 
+
 class AnkiDeckGenerator:
     def __init__(self, chinese_dictionary):
         self.chinese_dictionary = chinese_dictionary
@@ -31,7 +32,8 @@ class AnkiDeckGenerator:
         with open(path_in, 'r', encoding='utf-8') as fin:
             for line in fin.readlines():
                 if self.chinese_dictionary.is_chinese(line):
-                    words.update(self.chinese_dictionary.translate(line.rstrip()))
+                    words.update(
+                        self.chinese_dictionary.translate(line.rstrip()))
         return words
 
     def generate_deck(self, subtitle_file, template_file):
@@ -55,13 +57,17 @@ class AnkiDeckGenerator:
 
         genanki.Package(deck).write_to_file('chinese_test_cards.apkg')
 
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Generate anki deck from subtitle file')
-    parser.add_argument('--subtitle-file', help='Subtitle file to generate anki deck from')
+    parser = argparse.ArgumentParser(
+        description='Generate anki deck from subtitle file')
+    parser.add_argument('--subtitle-file',
+                        help='Subtitle file to generate anki deck from')
     parser.add_argument('--anki-template', help='Anki template to use')
     args = parser.parse_args()
 
-    dictionary = chinese_dictionary.ChineseDictionary(os.environ['DICT_PATH'], 3)
+    dictionary = chinese_dictionary.ChineseDictionary(
+        os.environ['DICT_PATH'], 3)
 
     generator = AnkiDeckGenerator(dictionary)
     generator.generate_deck(args.subtitle_file, args.anki_template)
