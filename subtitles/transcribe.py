@@ -4,12 +4,11 @@ import subprocess
 import os
 
 class SubtitleGenerator:
-    def __init__(self, model, language, tasks, pinyin, english, chinese_dictionary=None):
+    def __init__(self, model, language, tasks, pinyin, chinese_dictionary=None):
         self.model = model
         self.language = language
         self.tasks = tasks
         self.pinyin = pinyin
-        self.english = english
         self.chinese_dictionary = chinese_dictionary
 
     def _translate_subtitles(self, path_in, path_out, translate_func):
@@ -60,9 +59,6 @@ class SubtitleGenerator:
         if self.pinyin:
             print('Translating to pinyin')
             self._translate_subtitles(self.generated_subtitle_path, self.pinyin_subtitle_path, 'translate_to_pinyin')
-        if self.english:
-            print('Translating to english')
-            self._translate_subtitles(self.generated_subtitle_path, self.english_subtitle_path, 'translate_to_english')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Translate a hanzi file to pinyin')
@@ -75,21 +71,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     dictionary = None
-    if args.pinyin or args.english:
+    if args.pinyin:
         if args.language != 'Chinese':
-            raise Exception('Chinese must be the language if --pinyin or --english is selected')
+            raise Exception('Chinese must be the language if --pinyin is selected')
         print('Loading chinese dictionary')
         dictionary = chinese_dictionary.ChineseDictionary(os.environ['DICT_PATH'], 3)
-
-    if args.english and 'translate' in args.task:
-        raise Exception('Cannot select both --english and --task translate')
 
     generator = SubtitleGenerator(
         args.model,
         args.language,
         args.task.split(',') if len(args.task) > 0 else [],
         args.pinyin,
-        args.english,
         dictionary)
 
     for path in args.path:
