@@ -37,7 +37,7 @@ class AnkiDeckGenerator:
         return words
 
     def generate_deck(self, subtitle_file, template_file):
-        deck_name = 'Chinese'
+        deck_name = subtitle_file.split('.')[0]
         template = self._load_template(template_file)
         model = genanki.Model(
             self._get_unique_id(),
@@ -49,13 +49,12 @@ class AnkiDeckGenerator:
             deck_name)
 
         for hanzi, pinyin, english in self._translate_subtitles(subtitle_file):
-            print(f'{hanzi : <10} {pinyin : <15}> {english : <20}')
             my_note = genanki.Note(
                 model=model,
                 fields=[pinyin, english])
             deck.add_note(my_note)
 
-        genanki.Package(deck).write_to_file('chinese_test_cards.apkg')
+        genanki.Package(deck).write_to_file(f'{subtitle_file.split(".")[0]}.apkg')
 
 
 if __name__ == '__main__':
