@@ -60,8 +60,7 @@ class AnkiDeckGenerator:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Generate anki deck from subtitle file')
-    parser.add_argument('--subtitle-file',
-                        help='Subtitle file to generate anki deck from')
+    parser.add_argument('path', type=str, nargs='+')
     parser.add_argument('--anki-template', help='Anki template to use')
     args = parser.parse_args()
 
@@ -69,4 +68,6 @@ if __name__ == '__main__':
         os.environ['DICT_PATH'], 3)
 
     generator = AnkiDeckGenerator(dictionary)
-    generator.generate_deck(args.subtitle_file, args.anki_template)
+
+    for path in args.path:
+        generator.generate_deck(path, args.anki_template)
