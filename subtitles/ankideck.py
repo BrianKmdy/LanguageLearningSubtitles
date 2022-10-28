@@ -1,91 +1,67 @@
 # Tool to generate a deck of anki cards from a subtitle file
-from xpinyin import Pinyin
+import chinese_dictionary
 import genanki
 import argparse
 import json
 import uuid
-import click
+import os
+
+# TODO Fix the format of cards
+# TODO Handle recursive definitions
 
 class AnkiDeckGenerator:
-    def __init__(self, dict_file, max_word_length):
-        self.dict_file = dict_file
-        self.max_word_length = max_word_length
-        self.pinyin = Pinyin()
+    def __init__(self, chinese_dictionary):
+        self.chinese_dictionary = chinese_dictionary
 
-        with open(self.dict_file) as f:
-            dict_raw = json.load(f)
-            self.simplified = {e['simplified']: e for e in dict_raw}
-            self.traditional = {e['traditional']: e for e in dict_raw}
+    def _load_template(self, template_file):
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        with open(os.path.join(script_dir, 'templates', template_file), 'r') as f:
+            return json.load(f)
 
-    # TODO: Parse SRT file correctly instead of looking for Chinese characters
-    def is_chinese(self, line):
-        return any(u'\u4e00' <= c <= u'\u9fff' for c in line)
+    def _get_unique_id(self):
+        return uuid.uuid4().int >> 64 + 1
 
-    def lookup_word_in_dictionary(self, word):
-        for dictionary in [self.traditional, self.simplified]:
-            if word in dictionary:
-                return dictionary[word]
-        return None
+    def _translate_subtitles(self, path_in):
+        if self.chinese_dictionary is None:
+            raise Exception('Chinese dictionary not provided')
+        if not os.path.exists(path_in):
+            raise Exception(f'Subtitle file {path_in} does not exist')
 
-    def resolve_pinyin(self, word):
-        return self.pinyin.get_pinyin(word, '', tone_marks='marks')
+        words = set()
+        with open(path_in, 'r', encoding='utf-8') as fin:
+            for line in fin.readlines():
+                if self.chinese_dictionary.is_chinese(line):
+                    words.update(self.chinese_dictionary.translate(line.rstrip()))
+        return words
 
-    def find_words(self, line):
-        left = 0
-        while left < len(line):
-            found = False
-            for right in range(min(left + self.max_word_length, len(line)), left, -1):
-                word = line[left:right]
-                entry = self.lookup_word_in_dictionary(word)
-                if entry:
-                    pinyin = self.resolve_pinyin(word)
-                    yield (word, pinyin, entry['english'])
-                    found = True
-                    left = right
-                    break
-            if not found:
-                left += 1
+    def generate_deck(self, subtitle_file, template_file):
+        deck_name = 'Chinese'
+        template = self._load_template(template_file)
+        model = genanki.Model(
+            self._get_unique_id(),
+            template['name'],
+            fields=template['fields'],
+            templates=template['templates'])
+        deck = genanki.Deck(
+            self._get_unique_id(),
+            deck_name)
 
-    def run(self, subtitle_file):
-        my_model = genanki.Model(
-            uuid.uuid4().int >> 64 + 1,
-            'Simple Model',
-            fields=[
-                {'name': 'Question'},
-                {'name': 'Answer'},
-            ],
-            templates=[
-                {
-                'name': 'Card 1',
-                'qfmt': '{{Question}}',
-                'afmt': '{{FrontSide}}<hr id="answer">{{Answer}}',
-                },
-            ])
-        my_deck = genanki.Deck(
-            uuid.uuid4().int >> 64 + 1,
-            'Chinese test cards')
+        for hanzi, pinyin, english in self._translate_subtitles(subtitle_file):
+            print(f'{hanzi : <10} {pinyin : <15}> {english : <20}')
+            my_note = genanki.Note(
+                model=model,
+                fields=[pinyin, english])
+            deck.add_note(my_note)
 
-        with open(subtitle_file, 'r', encoding='utf-8') as f:
-            words = set()
-            for line in [l.rstrip('\n') for l in f.readlines()]:
-                if self.is_chinese(line):
-                    for word in self.find_words(line):
-                        words.add(word)
-            for hanzi, pinyin, english in words:
-                my_note = genanki.Note(
-                    model=my_model,
-                    fields=[pinyin, english])
-                my_deck.add_note(my_note)
-                print((hanzi, pinyin, english))
-
-        genanki.Package(my_deck).write_to_file('chinese_test_cards.apkg')
+        genanki.Package(deck).write_to_file('chinese_test_cards.apkg')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate anki deck from subtitle file')
-    parser.add_argument('--dict', type=str, required=True)
-    parser.add_argument('--sub', type=str, required=True)
-    parser.add_argument('--max-word-length', type=int, default=3)
+    parser.add_argument('--subtitle-file', help='Subtitle file to generate anki deck from')
+    parser.add_argument('--anki-template', help='Anki template to use')
     args = parser.parse_args()
 
-    generator = AnkiDeckGenerator(args.dict, args.max_word_length)
-    generator.run(args.sub)
+    dictionary = chinese_dictionary.ChineseDictionary(os.environ['DICT_PATH'], 3)
+
+    generator = AnkiDeckGenerator(dictionary)
+    generator.generate_deck(args.subtitle_file, args.anki_template)

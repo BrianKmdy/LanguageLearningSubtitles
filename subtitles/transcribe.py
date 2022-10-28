@@ -67,7 +67,6 @@ if __name__ == '__main__':
     parser.add_argument('--language', type=str, default='Chinese')
     parser.add_argument('--task', type=str, default='')
     parser.add_argument('--pinyin', action='store_true')
-    parser.add_argument('--english', action='store_true')
     args = parser.parse_args()
 
     dictionary = None

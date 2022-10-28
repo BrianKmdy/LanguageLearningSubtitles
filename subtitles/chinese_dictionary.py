@@ -13,7 +13,8 @@ class ChineseDictionary:
             self.simplified = {e['simplified']: e for e in dict_raw}
             self.traditional = {e['traditional']: e for e in dict_raw}
 
-    def _is_chinese(self, line):
+    @staticmethod
+    def is_chinese(line):
         return any(u'\u4e00' <= c <= u'\u9fff' for c in line)
 
     def _lookup_word_in_dictionary(self, word):
@@ -42,7 +43,7 @@ class ChineseDictionary:
                 left += 1
 
     def translate(self, text):
-        if self._is_chinese(text):
+        if self.is_chinese(text):
             return [word for word in self._find_words(text)]
         else:
             return [(text, text, text)]
