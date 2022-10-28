@@ -2,27 +2,28 @@ import chinese_dictionary
 import argparse
 import subprocess
 import os
+import yaml
 
 
 class SubtitleGenerator:
-    def __init__(self, model, language, tasks, pinyin, chinese_dictionary=None):
+    def __init__(self, model, language, tasks, pinyin, reference, chinese_dictionary=None):
         self.model = model
         self.language = language
         self.tasks = tasks
         self.pinyin = pinyin
+        self.reference = reference
         self.chinese_dictionary = chinese_dictionary
 
-    def _translate_subtitles(self, path_in, path_out, translate_func):
+    def _translate_subtitles(self, path_in, chinese_only=False):
         if self.chinese_dictionary is None:
             raise Exception('Chinese dictionary not provided')
         if not os.path.exists(path_in):
             raise Exception(f'Subtitle file {path_in} does not exist')
 
         with open(path_in, 'r', encoding='utf-8') as fin:
-            with open(path_out, 'w', encoding='utf-8') as fout:
-                for line in fin.readlines():
-                    fout.write(getattr(self.chinese_dictionary,
-                               translate_func)(line.rstrip()) + '\n')
+            for line in fin.readlines():
+                if self.chinese_dictionary.is_chinese(line) or not chinese_only:
+                    yield self.chinese_dictionary.translate(line.rstrip())
 
     def _generate_with_whisper(self, task):
         if task not in ('transcribe', 'translate'):
@@ -61,8 +62,18 @@ class SubtitleGenerator:
 
         if self.pinyin:
             print('Translating to pinyin')
-            self._translate_subtitles(
-                self.generated_subtitle_path, self.pinyin_subtitle_path, 'translate_to_pinyin')
+            with open(self.pinyin_subtitle_path, 'w', encoding='utf-8') as fout:
+                for line in self._translate_subtitles(self.generated_subtitle_path):
+                    fout.write(' '.join([pinyin for _, pinyin, _ in line]) + '\n')
+
+        if self.reference:
+            print('Saving dictionary reference')
+            with open(f'{os.path.join(self.dir, self.name)}.yaml', 'w', encoding='utf-8') as fout:
+                translations = {}
+                for line in self._translate_subtitles(self.generated_subtitle_path, chinese_only=True):
+                    for _, pinyin, english in line:
+                        translations[pinyin] = english
+                yaml.dump(translations, fout, allow_unicode=True)
 
 
 if __name__ == '__main__':
@@ -73,6 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--language', type=str, default='Chinese')
     parser.add_argument('--task', type=str, default='')
     parser.add_argument('--pinyin', action='store_true')
+    parser.add_argument('--reference', action='store_true')
     args = parser.parse_args()
 
     dictionary = None
@@ -89,6 +101,7 @@ if __name__ == '__main__':
         args.language,
         args.task.split(',') if len(args.task) > 0 else [],
         args.pinyin,
+        args.reference,
         dictionary)
 
     for path in args.path:
