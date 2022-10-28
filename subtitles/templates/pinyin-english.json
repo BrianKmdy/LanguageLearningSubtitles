@@ -1,0 +1,16 @@
+{
+    "name": "Pinyin to English",
+    "fields":
+    [
+        {"name": "Question"},
+        {"name": "Answer"}
+    ],
+    "templates":
+    [
+        {
+            "name": "Card 1",
+            "qfmt": "<br><br><br><br><br><br><br><h2 style=\"text-align: center;\">{{Question}}</h2>",
+            "afmt": "{{FrontSide}}<hr id=\"answer\"><h2 style=\"text-align: center;\">{{Answer}}</h2>"
+        }
+    ]
+}
