@@ -47,18 +47,6 @@ class SubtitleGenerator:
         self.chinese_dictionary = chinese_dictionary
         self.subtitle_parser = SubtitleParser()
 
-    def _translate_subtitles(self, path_in, chinese_only=False, tone_marks='marks'):
-        if self.chinese_dictionary is None:
-            raise Exception('Chinese dictionary not provided')
-        if not os.path.exists(path_in):
-            raise Exception(f'Subtitle file {path_in} does not exist')
-
-        self.chinese_dictionary.set_tone_marks(tone_marks)
-        with open(path_in, 'r', encoding='utf-8') as fin:
-            for line in fin.readlines():
-                if self.chinese_dictionary.is_chinese(line) or not chinese_only:
-                    yield self.chinese_dictionary.translate(line.rstrip())
-
     def _generate_with_whisper(self, task):
         if task not in ('transcribe', 'translate'):
             raise Exception(f'Unknown task {task}')
@@ -80,7 +68,37 @@ class SubtitleGenerator:
         os.remove(f'{self.path}.txt')
         os.remove(f'{self.path}.vtt')
 
+    def _generate_pinyin_subtitles(self):
+        if self.chinese_dictionary is None:
+            raise Exception('Chinese dictionary not provided')
+
+        print('Translating to pinyin')
+        subtitles = ''
+        for index, time, text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
+            subtitles += f'{index}\n{time}\n'
+            for line in text:
+                subtitles += ' '.join([pinyin for _, pinyin, _ in self.chinese_dictionary.translate(line)]) + '\n'
+            subtitles += '\n'
+
+        with open(self.pinyin_subtitle_path, 'w', encoding='utf-8') as fout:
+            fout.write(subtitles.rstrip())
+
+    def _generate_definitions(self):
+        print('Saving dictionary reference')
+        definitions = ''
+        for _, time, text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
+            entries = {}
+            for line in text:
+                for _, pinyin, english in self.chinese_dictionary.translate(line):
+                    entries[pinyin] = english
+            frame = {time: entries}
+            definitions += yaml.dump(frame, allow_unicode=True, default_flow_style=False, sort_keys=False) + '\n'
+
+        with open(f'{os.path.join(self.dir, self.name)}.yaml', 'w', encoding='utf-8') as fout:
+            fout.write(definitions.rstrip())
+
     def generate_subtitles(self, path):
+        print(f'Generating subtitles for {path}')
         self.path = path if os.path.isabs(
             path) else os.path.join(os.getcwd(), path)
         self.dir = os.path.dirname(self.path)
@@ -95,33 +113,10 @@ class SubtitleGenerator:
             self._generate_with_whisper(task)
 
         if self.pinyin:
-            print('Translating to pinyin')
-            with open(self.pinyin_subtitle_path, 'w', encoding='utf-8') as fout:
-                for line in self._translate_subtitles(self.generated_subtitle_path):
-                    fout.write(' '.join([pinyin for _, pinyin, _ in line]) + '\n')
+            self._generate_pinyin_subtitles()
 
         if self.definitions:
-            print('Saving dictionary reference')
-            with open(f'{os.path.join(self.dir, self.name)}.yaml', 'w', encoding='utf-8') as fout:
-                definitions = {}
-                for _, time, text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
-                    frame = {}
-                    for line in text:
-                        for hanzi, pinyin, english in self.chinese_dictionary.translate(line):
-                            print(f'{hanzi} ({pinyin}): {english}')
-                            frame[pinyin] = english
-                    definitions[time] = frame
-                yaml.dump(definitions, fout, allow_unicode=True, default_flow_style=False, sort_keys=False)
-
-# 
-# 
-# 
-#             with open(f'{os.path.join(self.dir, self.name)}.yaml', 'w', encoding='utf-8') as fout:
-#                 translations = {}
-#                 for line in self._translate_subtitles(self.generated_subtitle_path, chinese_only=True, tone_marks='numbers'):
-#                     for _, pinyin, english in line:
-#                         translations[pinyin] = english
-#                 yaml.dump(translations, fout, allow_unicode=True)
+            self._generate_definitions()
 
 
 if __name__ == '__main__':
@@ -142,7 +137,7 @@ if __name__ == '__main__':
                 'Chinese must be the language if --pinyin is selected')
         print('Loading chinese dictionary')
         dictionary = chinese_dictionary.ChineseDictionary(
-            os.environ['DICT_PATH'], 3)
+            os.environ['DICT_PATH'], 3, 'marks')
 
     generator = SubtitleGenerator(
         args.model,

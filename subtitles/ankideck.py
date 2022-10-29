@@ -6,7 +6,6 @@ import json
 import uuid
 import os
 
-# TODO Fix the format of cards
 # TODO Handle recursive definitions
 
 
