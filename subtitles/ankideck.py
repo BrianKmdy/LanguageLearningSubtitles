@@ -24,6 +24,15 @@ class AnkiDeckGenerator:
     def _get_unique_id(self):
         return uuid.uuid4().int >> 64 + 1
 
+    def _get_translations(self, subtitle_file):
+        # Generate the translations for the cards
+        translations = set()
+        for _, _, text in self.subtitle_parser.parse_subtitles(subtitle_file):
+            for line in text:
+                for _, pinyin, english in self.chinese_dictionary.translate(line):
+                    translations.add((pinyin, english))
+        return translations
+
     def generate_deck(self, subtitle_file, template_file):
         print(f'Generating deck from {subtitle_file}')
         deck_name = subtitle_file.split('.')[0]
@@ -37,14 +46,11 @@ class AnkiDeckGenerator:
             self._get_unique_id(),
             deck_name)
 
-        # Generate the translations for the cards
-        for _, _, text in self.subtitle_parser.parse_subtitles(subtitle_file):
-            for line in text:
-                for _, pinyin, english in self.chinese_dictionary.translate(line):
-                    my_note = genanki.Note(
-                        model=model,
-                        fields=[pinyin, english])
-                    deck.add_note(my_note)
+        for translation in self._get_translations(subtitle_file):
+            note = genanki.Note(
+                model=model,
+                fields=translation)
+            deck.add_note(note)
 
         genanki.Package(deck).write_to_file(
             f'{subtitle_file.split(".")[0]}.apkg')
