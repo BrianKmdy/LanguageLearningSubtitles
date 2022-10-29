@@ -4,7 +4,7 @@ import os
 
 @pytest.fixture
 def _dictionary():
-    yield chinese_dictionary.ChineseDictionary(os.environ['DICT_PATH'], 3)
+    yield chinese_dictionary.ChineseDictionary(os.environ['DICT_PATH'], 3, 'marks')
 
 # Pass chinese characters to dictionary and get back translation
 def test_translate(_dictionary):

@@ -4,7 +4,7 @@ import json
 
 
 class ChineseDictionary:
-    def __init__(self, dict_file, max_word_length, tone_marks=None):
+    def __init__(self, dict_file, max_word_length, tone_marks='numbers'):
         self.dict_file = dict_file
         self.max_word_length = max_word_length
         self.tone_marks = tone_marks

@@ -1,9 +1,44 @@
-import chinese_dictionary
+from . import chinese_dictionary
 import argparse
 import subprocess
 import os
 import yaml
+import re
 
+
+# A class to generate a definition file from a subtitle file
+class SubtitleParser:
+    def __init__(self):
+        self.frames = None
+        self.current = None
+
+        self.frame_index_re = re.compile(r'^([0-9]+)$')
+        self.frame_time_re = re.compile(r'^([0-9]+:[0-9]+:[0-9]+,[0-9]+) --> ([0-9]+:[0-9]+:[0-9]+,[0-9]+)$')
+        self.frame_text_re = re.compile(r'^(.+)$')
+
+    def parse_subtitles(self, subtitle_file):
+        if not os.path.exists(subtitle_file):
+            raise Exception(f'Subtitle file {subtitle_file} does not exist')
+
+        self.frames = []
+        with open(subtitle_file, 'r', encoding='utf-8') as fin:
+            for line in fin.readlines():
+                line = line.strip()
+                if self.frame_index_re.match(line):
+                    if self.current is not None:
+                        yield self.current
+                    self.current = [{
+                        'index': line,
+                        'time': 'n/a',
+                        'text': []
+                    }]
+                elif self.frame_time_re.match(line):
+                    self.current['time'] = line
+                elif self.frame_text_re.match(line):
+                    self.current['text'].append(line)
+            if self.current is not None:
+                yield self.current
+                
 
 class SubtitleGenerator:
     def __init__(self, model, language, tasks, pinyin, definitions, chinese_dictionary=None):
@@ -13,6 +48,7 @@ class SubtitleGenerator:
         self.pinyin = pinyin
         self.definitions = definitions
         self.chinese_dictionary = chinese_dictionary
+        self.subtitle_parser = SubtitleParser()
 
     def _translate_subtitles(self, path_in, chinese_only=False, tone_marks='marks'):
         if self.chinese_dictionary is None:
@@ -69,12 +105,16 @@ class SubtitleGenerator:
 
         if self.definitions:
             print('Saving dictionary reference')
-            with open(f'{os.path.join(self.dir, self.name)}.yaml', 'w', encoding='utf-8') as fout:
-                translations = {}
-                for line in self._translate_subtitles(self.generated_subtitle_path, chinese_only=True, tone_marks='numbers'):
-                    for _, pinyin, english in line:
-                        translations[pinyin] = english
-                yaml.dump(translations, fout, allow_unicode=True)
+#             for frame in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
+# 
+# 
+# 
+#             with open(f'{os.path.join(self.dir, self.name)}.yaml', 'w', encoding='utf-8') as fout:
+#                 translations = {}
+#                 for line in self._translate_subtitles(self.generated_subtitle_path, chinese_only=True, tone_marks='numbers'):
+#                     for _, pinyin, english in line:
+#                         translations[pinyin] = english
+#                 yaml.dump(translations, fout, allow_unicode=True)
 
 
 if __name__ == '__main__':
