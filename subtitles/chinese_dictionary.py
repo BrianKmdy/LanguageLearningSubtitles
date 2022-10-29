@@ -10,10 +10,13 @@ class ChineseDictionary:
         self.tone_marks = tone_marks
         self.pinyin = Pinyin()
 
+        self.traditional = {}
+        self.simplified = {}
         with open(self.dict_file) as f:
             dict_raw = json.load(f)
-            self.simplified = {e['simplified']: e for e in dict_raw}
-            self.traditional = {e['traditional']: e for e in dict_raw}
+            for entry in dict_raw:
+                self.traditional.setdefault(entry['traditional'], []).append(entry)
+                self.simplified.setdefault(entry['simplified'], []).append(entry)
 
     @staticmethod
     def is_chinese(line):
@@ -22,7 +25,14 @@ class ChineseDictionary:
     def _lookup_word_in_dictionary(self, word):
         for dictionary in [self.traditional, self.simplified]:
             if word in dictionary:
-                return dictionary[word]
+                if len(dictionary[word]) > 1:
+                    return (word,
+                            self._resolve_pinyin(word),
+                            '; '.join([entry['english'] for entry in dictionary[word]]))
+                else:
+                    return (word,
+                            self._resolve_pinyin(word),
+                            dictionary[word][0]['english'])
         return None
 
     def _resolve_pinyin(self, word):
@@ -36,8 +46,7 @@ class ChineseDictionary:
                 word = line[left:right]
                 entry = self._lookup_word_in_dictionary(word)
                 if entry:
-                    pinyin = self._resolve_pinyin(word)
-                    yield (word, pinyin, entry['english'])
+                    yield entry
                     found = True
                     left = right
                     break

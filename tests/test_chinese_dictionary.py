@@ -1,3 +1,9 @@
+import os
+import sys
+# TODO Get this import working in a less hacky way
+sys.path.append(os.path.join(os.path.dirname(
+    os.path.realpath(__file__)), '..', 'subtitles'))
+
 from subtitles import chinese_dictionary
 import pytest
 import os

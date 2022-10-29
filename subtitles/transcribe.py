@@ -12,10 +12,12 @@ class SubtitleParser:
         self.frames = None
         self.current = None
 
-        self.frame_index_re = re.compile(r'^([0-9]+)$')
+        self.frame_index_re = re.compile(
+            r'^([0-9]+)$')
         self.frame_time_re = re.compile(
             r'^([0-9]+:[0-9]+:[0-9]+,[0-9]+) --> ([0-9]+:[0-9]+:[0-9]+,[0-9]+)$')
-        self.frame_text_re = re.compile(r'^(.+)$')
+        self.frame_text_re = re.compile(
+            r'^(.+)$')
 
     # Returns a tuple of (index, time, text)
     def parse_subtitles(self, subtitle_file):
@@ -79,8 +81,8 @@ class SubtitleGenerator:
         for index, time, text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
             subtitles += f'{index}\n{time}\n'
             for line in text:
-                subtitles += ' '.join([pinyin for _, pinyin,
-                                      _ in self.chinese_dictionary.translate(line)]) + '\n'
+                subtitles += ' '.join(
+                    [pinyin for _, pinyin, _ in self.chinese_dictionary.translate(line)]) + '\n'
             subtitles += '\n'
 
         with open(self.pinyin_subtitle_path, 'w', encoding='utf-8') as fout:
