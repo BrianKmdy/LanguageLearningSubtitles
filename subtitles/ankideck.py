@@ -1,5 +1,5 @@
 # Tool to generate a deck of anki cards from a subtitle file
-from . import chinese_dictionary
+import chinese_dictionary
 import genanki
 import argparse
 import json

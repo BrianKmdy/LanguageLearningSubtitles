@@ -1,4 +1,4 @@
-from . import chinese_dictionary
+import chinese_dictionary
 import argparse
 import subprocess
 import os
@@ -35,7 +35,7 @@ class SubtitleParser:
                     self.current[2].append(line)
             if self.current is not None:
                 yield tuple(self.current)
-                
+
 
 class SubtitleGenerator:
     def __init__(self, model, language, tasks, pinyin, definitions, chinese_dictionary=None):
@@ -102,7 +102,17 @@ class SubtitleGenerator:
 
         if self.definitions:
             print('Saving dictionary reference')
-#             for frame in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
+            with open(f'{os.path.join(self.dir, self.name)}.yaml', 'w', encoding='utf-8') as fout:
+                definitions = {}
+                for _, time, text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
+                    frame = {}
+                    for line in text:
+                        for hanzi, pinyin, english in self.chinese_dictionary.translate(line):
+                            print(f'{hanzi} ({pinyin}): {english}')
+                            frame[pinyin] = english
+                    definitions[time] = frame
+                yaml.dump(definitions, fout, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
 # 
 # 
 # 
