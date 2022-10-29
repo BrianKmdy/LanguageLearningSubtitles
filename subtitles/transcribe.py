@@ -13,7 +13,8 @@ class SubtitleParser:
         self.current = None
 
         self.frame_index_re = re.compile(r'^([0-9]+)$')
-        self.frame_time_re = re.compile(r'^([0-9]+:[0-9]+:[0-9]+,[0-9]+) --> ([0-9]+:[0-9]+:[0-9]+,[0-9]+)$')
+        self.frame_time_re = re.compile(
+            r'^([0-9]+:[0-9]+:[0-9]+,[0-9]+) --> ([0-9]+:[0-9]+:[0-9]+,[0-9]+)$')
         self.frame_text_re = re.compile(r'^(.+)$')
 
     # Returns a tuple of (index, time, text)
@@ -22,6 +23,7 @@ class SubtitleParser:
             raise Exception(f'Subtitle file {subtitle_file} does not exist')
 
         self.frames = []
+        self.current = None
         with open(subtitle_file, 'r', encoding='utf-8') as fin:
             for line in fin.readlines():
                 line = line.strip()
@@ -77,7 +79,8 @@ class SubtitleGenerator:
         for index, time, text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
             subtitles += f'{index}\n{time}\n'
             for line in text:
-                subtitles += ' '.join([pinyin for _, pinyin, _ in self.chinese_dictionary.translate(line)]) + '\n'
+                subtitles += ' '.join([pinyin for _, pinyin,
+                                      _ in self.chinese_dictionary.translate(line)]) + '\n'
             subtitles += '\n'
 
         with open(self.pinyin_subtitle_path, 'w', encoding='utf-8') as fout:
@@ -87,12 +90,13 @@ class SubtitleGenerator:
         print('Saving dictionary reference')
         definitions = ''
         for _, time, text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
-            entries = {}
+            words = {}
             for line in text:
                 for _, pinyin, english in self.chinese_dictionary.translate(line):
-                    entries[pinyin] = english
-            frame = {time: entries}
-            definitions += yaml.dump(frame, allow_unicode=True, default_flow_style=False, sort_keys=False) + '\n'
+                    words[pinyin] = english
+            frame = {time: words}
+            definitions += yaml.dump(frame, allow_unicode=True,
+                                     default_flow_style=False, sort_keys=False) + '\n'
 
         with open(f'{os.path.join(self.dir, self.name)}.yaml', 'w', encoding='utf-8') as fout:
             fout.write(definitions.rstrip())
@@ -137,7 +141,7 @@ if __name__ == '__main__':
                 'Chinese must be the language if --pinyin is selected')
         print('Loading chinese dictionary')
         dictionary = chinese_dictionary.ChineseDictionary(
-            os.environ['DICT_PATH'], 3, 'marks')
+            os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dictionary.json'), 3, 'marks')
 
     generator = SubtitleGenerator(
         args.model,

@@ -8,6 +8,7 @@ import uuid
 import os
 
 # TODO Handle recursive definitions
+# TODO Return all definitions for a given character
 
 
 class AnkiDeckGenerator:
@@ -44,8 +45,9 @@ class AnkiDeckGenerator:
                         model=model,
                         fields=[pinyin, english])
                     deck.add_note(my_note)
-            
-        genanki.Package(deck).write_to_file(f'{subtitle_file.split(".")[0]}.apkg')
+
+        genanki.Package(deck).write_to_file(
+            f'{subtitle_file.split(".")[0]}.apkg')
 
 
 if __name__ == '__main__':
@@ -56,7 +58,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     dictionary = chinese_dictionary.ChineseDictionary(
-        os.environ['DICT_PATH'], 3, 'marks')
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dictionary.json'), 3, 'marks')
 
     generator = AnkiDeckGenerator(dictionary)
 

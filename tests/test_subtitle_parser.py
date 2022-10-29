@@ -2,9 +2,11 @@ from subtitles import transcribe, chinese_dictionary
 import pytest
 import os
 
+
 @pytest.fixture
 def _parser():
     yield transcribe.SubtitleParser()
+
 
 def test_parse_subtitles(_parser):
     subtitle_file = 'tests\\test_data\\test.srt'
