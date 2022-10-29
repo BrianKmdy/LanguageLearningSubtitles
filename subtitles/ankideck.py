@@ -37,6 +37,7 @@ class AnkiDeckGenerator:
         return words
 
     def generate_deck(self, subtitle_file, template_file):
+        print(f'Generating deck from {subtitle_file}')
         deck_name = subtitle_file.split('.')[0]
         template = self._load_template(template_file)
         model = genanki.Model(
@@ -65,7 +66,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     dictionary = chinese_dictionary.ChineseDictionary(
-        os.environ['DICT_PATH'], 3)
+        os.environ['DICT_PATH'], 3, 'marks')
 
     generator = AnkiDeckGenerator(dictionary)
 

@@ -4,9 +4,10 @@ import json
 
 
 class ChineseDictionary:
-    def __init__(self, dict_file, max_word_length):
+    def __init__(self, dict_file, max_word_length, tone_marks=None):
         self.dict_file = dict_file
         self.max_word_length = max_word_length
+        self.tone_marks = tone_marks
         self.pinyin = Pinyin()
 
         with open(self.dict_file) as f:
@@ -25,7 +26,7 @@ class ChineseDictionary:
         return None
 
     def _resolve_pinyin(self, word):
-        return self.pinyin.get_pinyin(word, '', tone_marks='marks')
+        return self.pinyin.get_pinyin(word, '', tone_marks=self.tone_marks)
 
     def _find_words(self, line):
         left = 0
@@ -42,6 +43,9 @@ class ChineseDictionary:
                     break
             if not found:
                 left += 1
+
+    def set_tone_marks(self, tone_marks):
+        self.tone_marks = tone_marks
 
     def translate(self, text):
         if self.is_chinese(text):

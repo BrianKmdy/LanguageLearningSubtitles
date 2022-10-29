@@ -6,20 +6,21 @@ import yaml
 
 
 class SubtitleGenerator:
-    def __init__(self, model, language, tasks, pinyin, reference, chinese_dictionary=None):
+    def __init__(self, model, language, tasks, pinyin, definitions, chinese_dictionary=None):
         self.model = model
         self.language = language
         self.tasks = tasks
         self.pinyin = pinyin
-        self.reference = reference
+        self.definitions = definitions
         self.chinese_dictionary = chinese_dictionary
 
-    def _translate_subtitles(self, path_in, chinese_only=False):
+    def _translate_subtitles(self, path_in, chinese_only=False, tone_marks='marks'):
         if self.chinese_dictionary is None:
             raise Exception('Chinese dictionary not provided')
         if not os.path.exists(path_in):
             raise Exception(f'Subtitle file {path_in} does not exist')
 
+        self.chinese_dictionary.set_tone_marks(tone_marks)
         with open(path_in, 'r', encoding='utf-8') as fin:
             for line in fin.readlines():
                 if self.chinese_dictionary.is_chinese(line) or not chinese_only:
@@ -66,11 +67,11 @@ class SubtitleGenerator:
                 for line in self._translate_subtitles(self.generated_subtitle_path):
                     fout.write(' '.join([pinyin for _, pinyin, _ in line]) + '\n')
 
-        if self.reference:
+        if self.definitions:
             print('Saving dictionary reference')
             with open(f'{os.path.join(self.dir, self.name)}.yaml', 'w', encoding='utf-8') as fout:
                 translations = {}
-                for line in self._translate_subtitles(self.generated_subtitle_path, chinese_only=True):
+                for line in self._translate_subtitles(self.generated_subtitle_path, chinese_only=True, tone_marks='numbers'):
                     for _, pinyin, english in line:
                         translations[pinyin] = english
                 yaml.dump(translations, fout, allow_unicode=True)
@@ -84,7 +85,7 @@ if __name__ == '__main__':
     parser.add_argument('--language', type=str, default='Chinese')
     parser.add_argument('--task', type=str, default='')
     parser.add_argument('--pinyin', action='store_true')
-    parser.add_argument('--reference', action='store_true')
+    parser.add_argument('--definitions', action='store_true')
     args = parser.parse_args()
 
     dictionary = None
@@ -101,7 +102,7 @@ if __name__ == '__main__':
         args.language,
         args.task.split(',') if len(args.task) > 0 else [],
         args.pinyin,
-        args.reference,
+        args.definitions,
         dictionary)
 
     for path in args.path:
