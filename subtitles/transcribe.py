@@ -16,6 +16,7 @@ class SubtitleParser:
         self.frame_time_re = re.compile(r'^([0-9]+:[0-9]+:[0-9]+,[0-9]+) --> ([0-9]+:[0-9]+:[0-9]+,[0-9]+)$')
         self.frame_text_re = re.compile(r'^(.+)$')
 
+    # Returns a tuple of (index, time, text)
     def parse_subtitles(self, subtitle_file):
         if not os.path.exists(subtitle_file):
             raise Exception(f'Subtitle file {subtitle_file} does not exist')
@@ -26,18 +27,14 @@ class SubtitleParser:
                 line = line.strip()
                 if self.frame_index_re.match(line):
                     if self.current is not None:
-                        yield self.current
-                    self.current = [{
-                        'index': line,
-                        'time': 'n/a',
-                        'text': []
-                    }]
+                        yield tuple(self.current)
+                    self.current = [line, 'n/a', []]
                 elif self.frame_time_re.match(line):
-                    self.current['time'] = line
+                    self.current[1] = line
                 elif self.frame_text_re.match(line):
-                    self.current['text'].append(line)
+                    self.current[2].append(line)
             if self.current is not None:
-                yield self.current
+                yield tuple(self.current)
                 
 
 class SubtitleGenerator:

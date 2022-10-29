@@ -21,7 +21,6 @@ def test_parse_subtitles(_parser):
             'World\n',
         ])
 
-    frames = _parser.parse_subtitles(subtitle_file)
-#     assert frames[0]['index'], frames[0][''] == ('1', '00:00:00,000 --> 00:00:01,000', ['Hello'])
-#     index, time, text = frames[1]
-#     assert frames[1] == ('2', '00:00:01,000 --> 00:00:02,000', ['World'])
+    frames = [f for f in _parser.parse_subtitles(subtitle_file)]
+    assert frames[0] == ('1', '00:00:00,000 --> 00:00:01,000', ['Hello'])
+    assert frames[1] == ('2', '00:00:01,000 --> 00:00:02,000', ['World'])
