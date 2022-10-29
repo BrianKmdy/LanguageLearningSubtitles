@@ -1,3 +1,5 @@
 .vscode
 *.apkg
 *.pyc
+*.srt
+dictionary.json
