@@ -28,7 +28,7 @@ class ChineseDictionary:
                 if len(dictionary[word]) > 1:
                     return (word,
                             self._resolve_pinyin(word),
-                            '; '.join([entry['english'] for entry in dictionary[word]]))
+                            '; '.join(sorted([entry['english'] for entry in dictionary[word]], key=lambda e: len(e))))
                 else:
                     return (word,
                             self._resolve_pinyin(word),
