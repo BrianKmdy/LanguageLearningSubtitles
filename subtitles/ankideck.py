@@ -61,10 +61,11 @@ if __name__ == '__main__':
         description='Generate anki deck from subtitle file')
     parser.add_argument('path', type=str, nargs='+')
     parser.add_argument('--anki-template', help='Anki template to use')
+    parser.add_argument('--tone-marks', default='marks', help='Tone marks to use')
     args = parser.parse_args()
 
     dictionary = chinese_dictionary.ChineseDictionary(
-        os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dictionary.json'), 3, 'marks')
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dictionary.json'), 3, args.tone_marks)
 
     generator = AnkiDeckGenerator(dictionary)
 
