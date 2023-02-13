@@ -1,12 +1,9 @@
+from llsubtitles import transcribe
+
 import shutil
 import pytest
-from subtitles import transcribe
 import sys
 import os
-# TODO Get this import working in a less hacky way
-sys.path.append(os.path.join(os.path.dirname(
-    os.path.realpath(__file__)), '..', 'subtitles'))
-
 
 @pytest.fixture
 def _parser():

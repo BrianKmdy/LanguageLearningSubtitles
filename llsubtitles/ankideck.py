@@ -1,6 +1,7 @@
 # Tool to generate a deck of anki cards from a subtitle file
-import chinese_dictionary
-import transcribe
+from . import chinese_dictionary
+from . import transcribe
+
 import genanki
 import argparse
 import json

@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "language-learning-with-subtitles"
+version = "0.1.0"
+description = "Use OpenAI's whisper to generate subtitles in multiple languages for the purpose of language learning"
+authors = ["Brian Moody <brian.k.moody@outlook.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "llsubtitles"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+openai-whisper = "^20230124"
+xpinyin = "^0.7.6"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
