@@ -11,10 +11,12 @@ def _dictionary():
     yield chinese_dictionary.ChineseDictionary(dictionary_path, 3, 'marks')
 
 # Pass chinese characters to dictionary and get back translation
+@pytest.mark.skip(reason="Need to figure out licensing on chinese dictionary before including")
 def test_translate(_dictionary):
     translation = _dictionary.translate('我是中国人')
     assert translation == [('我', 'wǒ', 'I'), ('是', 'shì', 'is'), ('中国人', 'zhōngguórén', 'Chinese person')]
 
+@pytest.mark.skip(reason="Need to figure out licensing on chinese dictionary before including")
 def test_group_sentence(_dictionary):
     chinese_sentence = '我是中国人'
     assert _dictionary.translate_to_pinyin(chinese_sentence) == 'wǒ shì zhōngguórén'
