@@ -1,4 +1,5 @@
-import chinese_dictionary
+from . import chinese_dictionary
+
 import argparse
 import subprocess
 import os
@@ -160,41 +161,3 @@ class SubtitleGenerator:
 
         if self.ranked_definitions:
             self._generate_ranked_definitions()
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Translate a hanzi file to pinyin')
-    parser.add_argument('path', type=str, nargs='+')
-    parser.add_argument('--model', type=str, default='small')
-    parser.add_argument('--language', type=str, default='Chinese')
-    parser.add_argument('--task', type=str, default='')
-    parser.add_argument('--pinyin', action='store_true')
-    parser.add_argument('--timed-definitions', action='store_true')
-    parser.add_argument('--ranked-definitions', action='store_true')
-    parser.add_argument('--tone-marks-subtitles', type=str, default='marks')
-    parser.add_argument('--tone-marks-definitions', type=str, default='numbers')
-    args = parser.parse_args()
-
-    dictionary = None
-    if args.pinyin:
-        if args.language != 'Chinese':
-            raise Exception(
-                'Chinese must be the language if --pinyin is selected')
-        print('Loading chinese dictionary')
-        dictionary = chinese_dictionary.ChineseDictionary(
-            os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dictionary.json'), 3)
-
-    generator = SubtitleGenerator(
-        args.model,
-        args.language,
-        args.task.split(',') if len(args.task) > 0 else [],
-        args.pinyin,
-        args.timed_definitions,
-        args.ranked_definitions,
-        dictionary,
-        args.tone_marks_subtitles,
-        args.tone_marks_definitions)
-
-    for path in args.path:
-        generator.generate_subtitles(path)

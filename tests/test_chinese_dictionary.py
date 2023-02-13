@@ -1,16 +1,13 @@
+from llsubtitles import chinese_dictionary
+
 import os
 import sys
-# TODO Get this import working in a less hacky way
-sys.path.append(os.path.join(os.path.dirname(
-    os.path.realpath(__file__)), '..', 'subtitles'))
-
-from subtitles import chinese_dictionary
 import pytest
 import os
 
 @pytest.fixture
 def _dictionary():
-    dictionary_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'subtitles', 'dictionary.json')
+    dictionary_path = 'dictionary.json'
     yield chinese_dictionary.ChineseDictionary(dictionary_path, 3, 'marks')
 
 # Pass chinese characters to dictionary and get back translation
