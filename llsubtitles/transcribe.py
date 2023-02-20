@@ -104,40 +104,6 @@ class SubtitleGenerator:
         with open(self.pinyin_subtitle_path, 'w', encoding='utf-8') as fout:
             fout.write(subtitles.rstrip())
 
-    def _generate_timed_definitions(self):
-        print('Saving timed dictionary reference')
-        definitions = ''
-        self.chinese_dictionary.set_tone_marks(self.tone_marks_definitions)
-        for _, time, text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
-            words = {}
-            for line in text:
-                for _, pinyin, english in self.chinese_dictionary.translate(line):
-                    words[pinyin] = english
-            frame = {time: words}
-            definitions += yaml.dump(frame, allow_unicode=True,
-                                     default_flow_style=False, sort_keys=False) + '\n'
-
-        with open(f'{os.path.join(self.dir, self.name)}-timed.yaml', 'w', encoding='utf-8') as fout:
-            fout.write(definitions.rstrip())
-
-    def _generate_ranked_definitions(self):
-        import json
-        print('Saving ranked dictionary reference')
-        words = {}
-        self.chinese_dictionary.set_tone_marks(self.tone_marks_definitions)
-        for _, _, text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
-            for line in text:
-                for _, pinyin, english in self.chinese_dictionary.translate(line):
-                    words.setdefault(pinyin, {'count': 0, 'translation': english})
-                    words[pinyin]['count'] += 1
-
-        print(f'Words: {json.dumps(words, indent=4)}')
-        definitions = {
-            pinyin: d['translation'] for pinyin, d in sorted(words.items(), key=lambda item: item[1]['count'], reverse=True)}
-        print(f'Definitions: {json.dumps(words, indent=4)}')
-        with open(f'{os.path.join(self.dir, self.name)}-ranked.yaml', 'w', encoding='utf-8') as fout:
-            yaml.dump(definitions, fout, allow_unicode=True, default_flow_style=False, sort_keys=False)
-
     def generate_subtitles(self, path):
         print(f'Generating subtitles for {path}')
         self.path = path if os.path.isabs(
@@ -155,9 +121,3 @@ class SubtitleGenerator:
 
         if self.pinyin:
             self._generate_pinyin_subtitles()
-
-        if self.timed_definitions:
-            self._generate_timed_definitions()
-
-        if self.ranked_definitions:
-            self._generate_ranked_definitions()
