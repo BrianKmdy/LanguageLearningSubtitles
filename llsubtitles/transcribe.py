@@ -35,7 +35,8 @@ class SubtitleParser:
                         yield tuple(self.current)
                     self.current = [line, 'n/a', []]
                 elif self.frame_time_re.match(line):
-                    self.current[1] = line
+                    match = self.frame_time_re.match(line)
+                    self.current[1] = (match.group(1), match.group(2))
                 elif self.frame_text_re.match(line):
                     self.current[2].append(line)
             if self.current is not None:
@@ -53,7 +54,8 @@ class SubtitleGenerator:
         ranked_definitions,
         chinese_dictionary,
         tone_marks_subtitles,
-        tone_marks_definitions
+        tone_marks_definitions,
+        combined
     ):
         self.model = model
         self.language = language
@@ -65,6 +67,7 @@ class SubtitleGenerator:
         self.subtitle_parser = SubtitleParser()
         self.tone_marks_subtitles = tone_marks_subtitles
         self.tone_marks_definitions = tone_marks_definitions
+        self.combined = combined
 
     def _generate_with_whisper(self, task):
         if task not in ('transcribe', 'translate'):
@@ -138,6 +141,69 @@ class SubtitleGenerator:
         with open(f'{os.path.join(self.dir, self.name)}-ranked.yaml', 'w', encoding='utf-8') as fout:
             yaml.dump(definitions, fout, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
+    def _merge_time_frames(self, frame_times):
+        # Sort the list of time frames by their start times
+        sorted_frames = sorted(frame_times, key=lambda x: x[0])
+        
+        merged_frames = []
+        current_start, current_end = sorted_frames[0]
+        
+        # Loop through all time frames, checking for overlaps and merging if necessary
+        for start, end in sorted_frames[1:]:
+            if start < current_end:
+                # There is an overlap, so merge the current frame with the new one
+                current_end = max(current_end, end)
+            else:
+                # No overlap, so start a new merged frame
+                merged_frames.append((current_start, current_end))
+                current_start, current_end = start, end
+        
+        # Add the last merged frame
+        merged_frames.append((current_start, current_end))
+        return merged_frames
+
+    # Merge the generated English and Pinyin subtitles
+    def _generate_combined_subtitles(self):
+        # Get all frames from subtitle parser for English and Pinyin. Find all overlapping frames and merge them.
+        print('Merging subtitles')
+        english_frames = list(self.subtitle_parser.parse_subtitles(self.english_subtitle_path))
+        pinyin_frames = list(self.subtitle_parser.parse_subtitles(self.pinyin_subtitle_path))
+
+        # Print english times, where time is the second element of the tuple
+        print(f'English frames: {[frame[1] for frame in english_frames]}')
+        print(f'Pinyin frames: {[frame[1] for frame in pinyin_frames]}')
+
+        print('------------------')
+
+        # Create set of frame_times and merge and overlapping frames into a larger blob
+        merged_frame_times = self._merge_time_frames(
+            set([frame[1] for frame in english_frames] +
+                [frame[1] for frame in pinyin_frames]
+            )
+        )
+        print(f'Merged frames: {merged_frame_times}')
+
+        subtitles = sorted([[f, ''] for f in merged_frame_times], key=lambda x: x[0][0])
+        # Loop through all frames and add the English and Pinyin subtitles to the merged frames
+
+        for _, time, text in pinyin_frames:
+            for i, frame in enumerate(subtitles):
+                if time[0] >= frame[0][0] and time[0] < frame[0][1]:
+                    for line in text:
+                        subtitles[i][1] += f'{line}\n'
+        for _, time, text in english_frames:
+            for i, frame in enumerate(subtitles):
+                if time[0] >= frame[0][0] and time[0] < frame[0][1]:
+                    for line in text:
+                        subtitles[i][1] += f'{line}\n'
+
+        # Write the merged subtitles to a file
+        with open(f'{os.path.join(self.dir, self.name)}.Combined.srt', 'w', encoding='utf-8') as fout:
+            for i, frame in enumerate(subtitles):
+                fout.write(f'{i+1}\n')
+                fout.write(f'{frame[0][0]} --> {frame[0][1]}\n')
+                fout.write(f'{frame[1]}\n\n')
+
     def generate_subtitles(self, path):
         print(f'Generating subtitles for {path}')
         self.path = path if os.path.isabs(
@@ -161,3 +227,6 @@ class SubtitleGenerator:
 
         if self.ranked_definitions:
             self._generate_ranked_definitions()
+
+        if self.combined:
+            self._generate_combined_subtitles()
