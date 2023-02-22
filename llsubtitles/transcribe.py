@@ -143,15 +143,8 @@ class SubtitleGenerator:
 
     def _generate_combined_subtitles(self):
         # Get all frames from subtitle parser for English and Pinyin. Find all overlapping frames and merge them.
-        print('Merging subtitles')
         english_frames = list(self.subtitle_parser.parse_subtitles(self.english_subtitle_path))
         pinyin_frames = list(self.subtitle_parser.parse_subtitles(self.pinyin_subtitle_path))
-
-        # Print english times, where time is the second element of the tuple
-        print(f'Pinyin frames: {[frame[1] for frame in pinyin_frames]}')
-        print(f'English frames: {[frame[1] for frame in english_frames]}')
-
-        print('------------------')
 
         # Convert the list of pinyin frames to a dictionary for faster searching
         subtitle_dict = {}
@@ -169,8 +162,6 @@ class SubtitleGenerator:
             start_time_epoch = datetime.strptime(start_time, "%H:%M:%S,%f")
             closest_start_time = min(subtitle_dict.keys(), key=lambda x: abs(x - start_time_epoch))
             subtitle_dict[closest_start_time]['text'] += '\n' + '\n'.join(text)
-
-        print(f'Subtitle dict: {subtitle_dict}')
 
         # Write the merged subtitles to a file
         with open(f'{os.path.join(self.dir, self.name)}.Combined.srt', 'w', encoding='utf-8') as fout:
