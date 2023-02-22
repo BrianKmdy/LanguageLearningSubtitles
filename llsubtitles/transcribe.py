@@ -1,10 +1,10 @@
 from . import chinese_dictionary
 
-import argparse
 import subprocess
 import os
 import yaml
 import re
+from datetime import datetime, timedelta
 
 
 # A class to generate a definition file from a subtitle file
@@ -35,7 +35,8 @@ class SubtitleParser:
                         yield tuple(self.current)
                     self.current = [line, 'n/a', []]
                 elif self.frame_time_re.match(line):
-                    self.current[1] = line
+                    match = self.frame_time_re.match(line)
+                    self.current[1] = (match.group(1), match.group(2))
                 elif self.frame_text_re.match(line):
                     self.current[2].append(line)
             if self.current is not None:
@@ -53,7 +54,8 @@ class SubtitleGenerator:
         ranked_definitions,
         chinese_dictionary,
         tone_marks_subtitles,
-        tone_marks_definitions
+        tone_marks_definitions,
+        combined
     ):
         self.model = model
         self.language = language
@@ -65,6 +67,7 @@ class SubtitleGenerator:
         self.subtitle_parser = SubtitleParser()
         self.tone_marks_subtitles = tone_marks_subtitles
         self.tone_marks_definitions = tone_marks_definitions
+        self.combined = combined
 
     def _generate_with_whisper(self, task):
         if task not in ('transcribe', 'translate'):
@@ -138,6 +141,35 @@ class SubtitleGenerator:
         with open(f'{os.path.join(self.dir, self.name)}-ranked.yaml', 'w', encoding='utf-8') as fout:
             yaml.dump(definitions, fout, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
+    def _generate_combined_subtitles(self):
+        # Get all frames from subtitle parser for English and Pinyin. Find all overlapping frames and merge them.
+        english_frames = list(self.subtitle_parser.parse_subtitles(self.english_subtitle_path))
+        pinyin_frames = list(self.subtitle_parser.parse_subtitles(self.pinyin_subtitle_path))
+
+        # Convert the list of pinyin frames to a dictionary for faster searching
+        subtitle_dict = {}
+        for _, (start_time, end_time), text in pinyin_frames:
+            start_time_epoch = datetime.strptime(start_time, "%H:%M:%S,%f")
+            subtitle_dict[start_time_epoch] = {
+                'start_time': start_time,
+                'end_time': end_time,
+                'text': '\n'.join(text)
+            }
+
+        # Iterate over English frames, find the closest start time in the subtitle dictionary,
+        # and combine the English text with the existing Pinyin text.
+        for _, (start_time, end_time), text in english_frames:
+            start_time_epoch = datetime.strptime(start_time, "%H:%M:%S,%f")
+            closest_start_time = min(subtitle_dict.keys(), key=lambda x: abs(x - start_time_epoch))
+            subtitle_dict[closest_start_time]['text'] += '\n' + '\n'.join(text)
+
+        # Write the merged subtitles to a file
+        with open(f'{os.path.join(self.dir, self.name)}.Combined.srt', 'w', encoding='utf-8') as fout:
+            for i, (_, frame) in enumerate(sorted(subtitle_dict.items())):
+                fout.write(f'{i+1}\n')
+                fout.write(f'{frame["start_time"]} --> {frame["end_time"]}\n')
+                fout.write(f'{frame["text"]}\n\n')
+
     def generate_subtitles(self, path):
         print(f'Generating subtitles for {path}')
         self.path = path if os.path.isabs(
@@ -161,3 +193,6 @@ class SubtitleGenerator:
 
         if self.ranked_definitions:
             self._generate_ranked_definitions()
+
+        if self.combined:
+            self._generate_combined_subtitles()

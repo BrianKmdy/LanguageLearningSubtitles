@@ -15,6 +15,7 @@ def main():
     parser.add_argument('--ranked-definitions', action='store_true')
     parser.add_argument('--tone-marks-subtitles', type=str, default='marks')
     parser.add_argument('--tone-marks-definitions', type=str, default='numbers')
+    parser.add_argument('--combined', action='store_true')
     args = parser.parse_args()
 
     dictionary = None
@@ -34,7 +35,8 @@ def main():
         args.ranked_definitions,
         dictionary,
         args.tone_marks_subtitles,
-        args.tone_marks_definitions)
+        args.tone_marks_definitions,
+        args.combined)
 
     for path in args.path:
         generator.generate_subtitles(path)
