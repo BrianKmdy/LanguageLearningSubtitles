@@ -55,7 +55,8 @@ class SubtitleGenerator:
         chinese_dictionary,
         tone_marks_subtitles,
         tone_marks_definitions,
-        combined
+        combined,
+        definitions
     ):
         self.model = model
         self.language = language
@@ -68,6 +69,7 @@ class SubtitleGenerator:
         self.tone_marks_subtitles = tone_marks_subtitles
         self.tone_marks_definitions = tone_marks_definitions
         self.combined = combined
+        self.definitions = definitions
 
     def _generate_with_whisper(self, task):
         if task not in ('transcribe', 'translate'):
@@ -141,6 +143,21 @@ class SubtitleGenerator:
         with open(f'{os.path.join(self.dir, self.name)}-ranked.yaml', 'w', encoding='utf-8') as fout:
             yaml.dump(definitions, fout, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
+    def _generate_definition_subtitles(self):
+        print('Translating to English')
+        subtitles = ''
+        self.chinese_dictionary.set_tone_marks(self.tone_marks_definitions)
+        for index, (start_time, end_time), text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
+            subtitles += f'{index}\n{start_time} --> {end_time}\n'
+            # For each line, show the pinyin and the English translation
+            for line in text:
+                for _, pinyin, english in self.chinese_dictionary.translate(line):
+                    subtitles += f'{pinyin} -> {english}' + '\n'
+            subtitles += '\n'
+
+        with open(f'{os.path.join(self.dir, self.name)}.Definitions.srt', 'w', encoding='utf-8') as fout:
+            fout.write(subtitles.rstrip())
+
     def _generate_combined_subtitles(self):
         # Get all frames from subtitle parser for English and Pinyin. Find all overlapping frames and merge them.
         english_frames = list(self.subtitle_parser.parse_subtitles(self.english_subtitle_path))
@@ -196,3 +213,6 @@ class SubtitleGenerator:
 
         if self.combined:
             self._generate_combined_subtitles()
+
+        if self.definitions:
+            self._generate_definition_subtitles()
