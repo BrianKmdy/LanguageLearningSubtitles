@@ -11,16 +11,13 @@ def main():
     parser.add_argument('--language', type=str, default='Chinese')
     parser.add_argument('--task', type=str, default='')
     parser.add_argument('--pinyin', action='store_true')
-    parser.add_argument('--timed-definitions', action='store_true')
-    parser.add_argument('--ranked-definitions', action='store_true')
     parser.add_argument('--tone-marks-subtitles', type=str, default='marks')
-    parser.add_argument('--tone-marks-definitions', type=str, default='numbers')
     parser.add_argument('--combined', action='store_true')
     parser.add_argument('--definitions', action='store_true')
     args = parser.parse_args()
 
     dictionary = None
-    if args.pinyin or args.timed_definitions or args.ranked_definitions or args.definitions:
+    if args.pinyin or args.definitions:
         if args.language != 'Chinese':
             raise Exception(
                 'Chinese must be the language if --pinyin is selected')
@@ -32,11 +29,8 @@ def main():
         args.language,
         args.task.split(',') if len(args.task) > 0 else [],
         args.pinyin,
-        args.timed_definitions,
-        args.ranked_definitions,
         dictionary,
         args.tone_marks_subtitles,
-        args.tone_marks_definitions,
         args.combined,
         args.definitions)
 
