@@ -8,7 +8,7 @@ dictionary_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dict
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Translate a hanzi file to pinyin')
+        description='Create multi-language subtitles from a video file for language learning.')
     parser.add_argument('path', type=str, nargs='+')
     parser.add_argument('--model', type=str, default='small')
     parser.add_argument('--language', type=str, default='Chinese')
