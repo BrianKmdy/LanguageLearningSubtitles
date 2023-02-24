@@ -1,10 +1,7 @@
-from . import chinese_dictionary
-
 import subprocess
 import os
-import yaml
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 # A class to generate a definition file from a subtitle file
@@ -50,7 +47,7 @@ class SubtitleGenerator:
         language,
         tasks,
         pinyin,
-        chinese_dictionary,
+        dictionary,
         tone_marks_subtitles,
         combined,
         definitions
@@ -59,7 +56,7 @@ class SubtitleGenerator:
         self.language = language
         self.tasks = tasks
         self.pinyin = pinyin
-        self.chinese_dictionary = chinese_dictionary
+        self.dictionary = dictionary
         self.subtitle_parser = SubtitleParser()
         self.tone_marks_subtitles = tone_marks_subtitles
         self.combined = combined
@@ -87,17 +84,17 @@ class SubtitleGenerator:
         os.remove(f'{self.path}.vtt')
 
     def _generate_pinyin_subtitles(self):
-        if self.chinese_dictionary is None:
+        if self.dictionary is None:
             raise Exception('Chinese dictionary not provided')
 
         print('Translating to pinyin')
         subtitles = ''
-        self.chinese_dictionary.set_tone_marks(self.tone_marks_subtitles)
-        for index, time, text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
-            subtitles += f'{index}\n{time}\n'
+        self.dictionary.set_tone_marks(self.tone_marks_subtitles)
+        for index, (start_time, end_time), text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
+            subtitles += f'{index}\n{start_time} --> {end_time}\n'
             for line in text:
                 subtitles += ' '.join(
-                    [pinyin for _, pinyin, _ in self.chinese_dictionary.translate(line)]) + '\n'
+                    [pinyin for _, pinyin, _ in self.dictionary.translate(line)]) + '\n'
             subtitles += '\n'
 
         with open(self.pinyin_subtitle_path, 'w', encoding='utf-8') as fout:
@@ -107,21 +104,21 @@ class SubtitleGenerator:
     def _generate_definition_subtitles(self):
         print('Translating to English')
         subtitles = ''
-        self.chinese_dictionary.set_tone_marks(self.tone_marks_subtitles)
+        self.dictionary.set_tone_marks(self.tone_marks_subtitles)
         for index, (start_time, end_time), text in self.subtitle_parser.parse_subtitles(self.generated_subtitle_path):
             subtitles += f'{index}\n{start_time} --> {end_time}\n'
             # For each line, show the pinyin and the English translation
             for line in text:
-                for _, pinyin, english in self.chinese_dictionary.translate(line):
+                for _, pinyin, english in self.dictionary.translate(line):
                     subtitles += f'{pinyin} -> {english}' + '\n'
             subtitles += '\n'
 
         with open(f'{os.path.join(self.dir, self.name)}.Definitions.srt', 'w', encoding='utf-8') as fout:
             fout.write(subtitles.rstrip())
 
-    def _generate_combined_subtitles(self):
+    def _generate_combined_subtitles(self, subtitle_path):
         # Get all frames from subtitle parser for English and Pinyin. Find all overlapping frames and merge them.
-        source_frames = list(self.subtitle_parser.parse_subtitles(self.generated_subtitle_path))
+        source_frames = list(self.subtitle_parser.parse_subtitles(subtitle_path))
         english_frames = list(self.subtitle_parser.parse_subtitles(self.english_subtitle_path))
 
         # Convert the list of pinyin frames to a dictionary for faster searching
@@ -165,12 +162,12 @@ class SubtitleGenerator:
 
         if self.pinyin:
             self._generate_pinyin_subtitles()
-            self.generated_subtitle_path = self.pinyin_subtitle_path
 
         if self.combined:
-            self._generate_combined_subtitles()
+            self._generate_combined_subtitles(
+                self.pinyin_subtitle_path if self.pinyin else self.generated_subtitle_path)
 
         if self.definitions:
-            if not self.pinyin():
+            if not self.pinyin:
                 raise Exception('Definitions require pinyin subtitles')
             self._generate_definition_subtitles()

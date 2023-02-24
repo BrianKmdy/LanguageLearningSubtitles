@@ -1,7 +1,10 @@
-from . import chinese_dictionary
 from . import transcribe
+from .dictionaries import chinese
 
+import os
 import argparse
+
+dictionary_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dictionaries', 'data')
 
 def main():
     parser = argparse.ArgumentParser(
@@ -19,10 +22,10 @@ def main():
     dictionary = None
     if args.pinyin or args.definitions:
         if args.language != 'Chinese':
-            raise Exception(
-                'Chinese must be the language if --pinyin is selected')
+            raise Exception('Chinese must be the language if --pinyin is selected')
         print('Loading chinese dictionary')
-        dictionary = chinese_dictionary.ChineseDictionary('dictionary.json', 3)
+        dictionary = chinese.ChineseDictionary(
+            os.path.join(dictionary_path, 'chinese-english.json'), 3)
 
     generator = transcribe.SubtitleGenerator(
         args.model,
