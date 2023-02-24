@@ -1,5 +1,5 @@
 # Tool to generate a deck of anki cards from a subtitle file
-from . import transcribe
+from . import subtitles
 from .dictionaries import chinese
 
 import genanki
@@ -16,7 +16,7 @@ dictionary_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dict
 class AnkiDeckGenerator:
     def __init__(self, dictionary):
         self.dictionary = dictionary
-        self.subtitle_parser = transcribe.SubtitleParser()
+        self.subtitle_parser = subtitles.SubtitleParser()
 
     def _load_template(self, template_file):
         script_dir = os.path.dirname(os.path.realpath(__file__))

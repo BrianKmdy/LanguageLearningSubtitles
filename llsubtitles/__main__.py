@@ -1,4 +1,4 @@
-from . import transcribe
+from . import subtitles
 from .dictionaries import chinese
 
 import os
@@ -27,7 +27,7 @@ def main():
         dictionary = chinese.ChineseDictionary(
             os.path.join(dictionary_path, 'chinese-english.json'), 3)
 
-    generator = transcribe.SubtitleGenerator(
+    generator = subtitles.SubtitleGenerator(
         args.model,
         args.language,
         args.task.split(',') if len(args.task) > 0 else [],

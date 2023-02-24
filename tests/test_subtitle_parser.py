@@ -1,4 +1,4 @@
-from llsubtitles import transcribe
+from llsubtitles import subtitles
 
 import shutil
 import pytest
@@ -6,7 +6,7 @@ import os
 
 @pytest.fixture
 def _parser():
-    yield transcribe.SubtitleParser()
+    yield subtitles.SubtitleParser()
 
 
 @pytest.fixture
