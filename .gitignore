@@ -6,3 +6,4 @@ dictionary.json
 subtest
 dist
 .pytest_cache
+__pycache__
