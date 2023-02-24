@@ -1,3 +1,7 @@
+from .dictionaries import chinese
+
+from typing import List
+
 import subprocess
 import os
 import re
@@ -18,7 +22,7 @@ class SubtitleParser:
             r'^(.+)$')
 
     # Returns a tuple of (index, time, text)
-    def parse_subtitles(self, subtitle_file):
+    def parse_subtitles(self, subtitle_file: str):
         if not os.path.exists(subtitle_file):
             raise Exception(f'Subtitle file {subtitle_file} does not exist')
 
@@ -43,14 +47,14 @@ class SubtitleParser:
 class SubtitleGenerator:
     def __init__(
         self,
-        model,
-        language,
-        tasks,
-        pinyin,
-        dictionary,
-        tone_marks_subtitles,
-        combined,
-        definitions
+        model: str,
+        language: str,
+        tasks: List[str],
+        pinyin: bool,
+        dictionary: chinese.ChineseDictionary,
+        tone_marks_subtitles: bool,
+        combined: bool,
+        definitions: bool
     ):
         self.model = model
         self.language = language
@@ -62,7 +66,7 @@ class SubtitleGenerator:
         self.combined = combined
         self.definitions = definitions
 
-    def _generate_with_whisper(self, task):
+    def _generate_with_whisper(self, task: str):
         if task not in ('transcribe', 'translate'):
             raise Exception(f'Unknown task {task}')
 
@@ -116,7 +120,7 @@ class SubtitleGenerator:
         with open(f'{os.path.join(self.dir, self.name)}.Definitions.srt', 'w', encoding='utf-8') as fout:
             fout.write(subtitles.rstrip())
 
-    def _generate_combined_subtitles(self, subtitle_path):
+    def _generate_combined_subtitles(self, subtitle_path: str):
         # Get all frames from subtitle parser for English and Pinyin. Find all overlapping frames and merge them.
         source_frames = list(self.subtitle_parser.parse_subtitles(subtitle_path))
         english_frames = list(self.subtitle_parser.parse_subtitles(self.english_subtitle_path))
@@ -145,7 +149,7 @@ class SubtitleGenerator:
                 fout.write(f'{frame["start_time"]} --> {frame["end_time"]}\n')
                 fout.write(f'{frame["text"]}\n\n')
 
-    def generate_subtitles(self, path):
+    def generate_subtitles(self, path: str):
         print(f'Generating subtitles for {path}')
         self.path = path if os.path.isabs(
             path) else os.path.join(os.getcwd(), path)

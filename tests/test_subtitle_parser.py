@@ -2,7 +2,6 @@ from llsubtitles import transcribe
 
 import shutil
 import pytest
-import sys
 import os
 
 @pytest.fixture
@@ -33,5 +32,5 @@ def test_parse_subtitles(_parser, _subtitle_file):
         ])
 
     frames = [f for f in _parser.parse_subtitles(_subtitle_file)]
-    assert frames[0] == ('1', '00:00:00,000 --> 00:00:01,000', ['Hello'])
-    assert frames[1] == ('2', '00:00:01,000 --> 00:00:02,000', ['World'])
+    assert frames[0] == ('1', ('00:00:00,000', '00:00:01,000'), ['Hello'])
+    assert frames[1] == ('2', ('00:00:01,000', '00:00:02,000'), ['World'])
