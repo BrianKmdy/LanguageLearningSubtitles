@@ -1,6 +1,6 @@
 # Tool to generate a deck of anki cards from a subtitle file
-from . import chinese_dictionary
 from . import transcribe
+from .dictionaries import chinese
 
 import genanki
 import argparse
@@ -11,10 +11,11 @@ import os
 # TODO Handle recursive definitions
 # TODO Return all definitions for a given character
 
+dictionary_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dictionaries', 'data')
 
 class AnkiDeckGenerator:
-    def __init__(self, chinese_dictionary):
-        self.chinese_dictionary = chinese_dictionary
+    def __init__(self, dictionary):
+        self.dictionary = dictionary
         self.subtitle_parser = transcribe.SubtitleParser()
 
     def _load_template(self, template_file):
@@ -30,7 +31,7 @@ class AnkiDeckGenerator:
         translations = set()
         for _, _, text in self.subtitle_parser.parse_subtitles(subtitle_file):
             for line in text:
-                for _, pinyin, english in self.chinese_dictionary.translate(line):
+                for _, pinyin, english in self.dictionary.translate(line):
                     translations.add((pinyin, english))
         return translations
 
@@ -65,8 +66,8 @@ if __name__ == '__main__':
     parser.add_argument('--tone-marks', default='marks', help='Tone marks to use')
     args = parser.parse_args()
 
-    dictionary = chinese_dictionary.ChineseDictionary(
-        os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dictionary.json'), 3, args.tone_marks)
+    dictionary = chinese.ChineseDictionary(
+            os.path.join(dictionary_path, 'chinese-english.json'), 3)
 
     generator = AnkiDeckGenerator(dictionary)
 

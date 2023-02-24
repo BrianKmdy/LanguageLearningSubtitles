@@ -1,16 +1,15 @@
-from llsubtitles import chinese_dictionary
+from llsubtitles.dictionaries import chinese
 
 import os
-import sys
 import pytest
 import os
 
+dictionary_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'llsubtitles', 'dictionaries', 'data')
+
 @pytest.fixture
 def _dictionary():
-    dictionary_path = 'dictionary.json'
-    yield chinese_dictionary.ChineseDictionary(dictionary_path, 3, 'marks')
+    yield chinese.ChineseDictionary(os.path.join(dictionary_path, 'chinese-english.json'), 3, 'marks')
 
-# Pass chinese characters to dictionary and get back translation
 def test_translate(_dictionary):
     translation = _dictionary.translate('我是中国人')
     assert translation == [('我', 'wǒ', 'I'), ('是', 'shì', 'is'), ('中国人', 'zhōngguórén', 'Chinese person')]
